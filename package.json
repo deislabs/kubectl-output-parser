@@ -1,0 +1,29 @@
+{
+  "name": "kubectl-output-parser",
+  "version": "0.1.0",
+  "description": "Functions for parsing kubectl output",
+  "main": "js/index.js",
+  "types": "js/index.d.ts",
+  "files": [
+    "js/**/*"
+  ],
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "prepare": "node ./node_modules/vscode/bin/install && npm run compile",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/deislabs/kubectl-output-parser"
+  },
+  "keywords": [
+    "kubernetes"
+  ],
+  "author": "itowlson@microsoft.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/deislabs/kubectl-output-parser/issues"
+  },
+  "homepage": "https://github.com/deislabs/kubectl-output-parser#readme"
+}
