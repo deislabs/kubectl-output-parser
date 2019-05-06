@@ -16,10 +16,10 @@ export function asHeaderedLines(output: KubectlOutput): Errorable<TableLines> {
 
     if (output.code === 0) {
         const lines = output.stdout.split('\n');
-        if (lines.length === 0) {
+        const header = lines.shift();
+        if (!header) {
             return { succeeded: true, result: { header: '', body: [] } };
         }
-        const header = lines.shift()!;  // safe because we have dealt with the length === 0 case
         const body = lines.filter((l) => l.length > 0);
         return { succeeded: true, result: { header, body } };
     }
