@@ -9,3 +9,4 @@ export type KubectlOutput = ShellResult | undefined;
 export * from './dictionary';
 export * from './errorable';
 export { asTableLines, parseTabular, parseTableLines, TableLines } from './table';
+export { parseJSON, parseJSONCollection, KubernetesList } from './json';
