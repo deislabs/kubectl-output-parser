@@ -8,4 +8,4 @@ export type KubectlOutput = ShellResult | undefined;
 
 export * from './dictionary';
 export * from './errorable';
-export { asHeaderedLines, parseHeaderedLines, parseTable, TableLines } from './table';
+export { asTableLines, parseTabular, parseTableLines, TableLines } from './table';

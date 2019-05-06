@@ -9,7 +9,17 @@ export interface TableLines {
     readonly body: string[];
 }
 
-export function asHeaderedLines(output: KubectlOutput): Errorable<TableLines> {
+export function parseTabular(output: KubectlOutput): Errorable<Dictionary<string>[]> {
+    const table = asTableLines(output);
+    if (failed(table)) {
+        return table;
+    }
+
+    const parsed = parseTableLines(table.result, KUBECTL_OUTPUT_COLUMN_SEPARATOR);
+    return { succeeded: true, result: parsed };
+}
+
+export function asTableLines(output: KubectlOutput): Errorable<TableLines> {
     if (!output) {
         return { succeeded: false, reason: 'failed-to-run', error: 'Unable to run kubectl' };
     }
@@ -27,17 +37,7 @@ export function asHeaderedLines(output: KubectlOutput): Errorable<TableLines> {
     return { succeeded: false, reason: 'kubectl-error', error: output.stderr };
 }
 
-export function parseHeaderedLines(output: KubectlOutput): Errorable<Dictionary<string>[]> {
-    const table = asHeaderedLines(output);
-    if (failed(table)) {
-        return table;
-    }
-
-    const parsed = parseTable(table.result, KUBECTL_OUTPUT_COLUMN_SEPARATOR);
-    return { succeeded: true, result: parsed };
-}
-
-export function parseTable(table: TableLines, columnSeparator: RegExp): Dictionary<string>[] {
+export function parseTableLines(table: TableLines, columnSeparator: RegExp): Dictionary<string>[] {
     if (table.header.length === 0 || table.body.length === 0) {
         return [];
     }
