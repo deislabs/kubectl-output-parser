@@ -2,7 +2,7 @@ import { Dictionary } from "./dictionary";
 import { KubectlOutput } from ".";
 import { Errorable, failed } from "./errorable";
 
-const KUBECTL_OUTPUT_COLUMN_SEPARATOR = /\s+/g;
+const KUBECTL_OUTPUT_COLUMN_SEPARATOR = /\s\s+/g;
 
 /**
  * Provides a line-oriented view of tabular kubectl output.
