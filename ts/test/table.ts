@@ -11,6 +11,27 @@ foo      true     false
 barbar   false    twice
 `.trim();
 
+const KUBECTL_SAMPLE_GET_WIDE_RESULT =
+`
+NAMESPACE  NAME     FOO      BAR    RELEASE STATUS  SPLINE LEVEL
+ns1        foo      true     false  green           reticulated
+ns2        barbar   false    twice  dark orange     none
+`.trim();
+
+const KUBECTL_SAMPLE_MULTISPACE_RESULT =
+`
+NAMESPACE  NAME     FOO      BAR    RELEASE STATUS  MOTTO
+ns1        foo      true     false  green           let the games    begin
+ns2        barbar   false    twice  dark  orange    none
+`.trim();
+
+const KUBECTL_SAMPLE_SKIPPED_COLUMN_RESULT =
+`
+NAMESPACE  NAME     RELEASE STATUS  MOTTO
+ns1        foo      green           hello
+ns2        barbar   dark orange
+`.trim();
+
 describe('asTableLines', () => {
     it('should report failure if kubectl failed to run', () => {
         const result = parser.asTableLines(undefined);
@@ -83,5 +104,55 @@ describe('parseTabular', () => {
         assert.equal(objects[1].name, 'barbar');
         assert.equal(objects[1].foo, 'false');
         assert.equal(objects[1].bar, 'twice');
+    });
+    it('should parse headers with spaces correctly', () => {
+        const result = parser.parseTabular({ code: 0, stdout: KUBECTL_SAMPLE_GET_WIDE_RESULT, stderr: '' });
+        assert.equal(true, result.succeeded);
+        const objects = (<Succeeded<Dictionary<string>[]>>result).result;
+        assert.equal(objects.length, 2);
+        assert.equal(objects[0].namespace, 'ns1');
+        assert.equal(objects[0].name, 'foo');
+        assert.equal(objects[0].foo, 'true');
+        assert.equal(objects[0].bar, 'false');
+        assert.equal(objects[0]['release status'], 'green');
+        assert.equal(objects[0]['spline level'], 'reticulated');
+        assert.equal(objects[1].namespace, 'ns2');
+        assert.equal(objects[1].name, 'barbar');
+        assert.equal(objects[1].foo, 'false');
+        assert.equal(objects[1].bar, 'twice');
+        assert.equal(objects[1]['release status'], 'dark orange');
+        assert.equal(objects[1]['spline level'], 'none');
+    });
+    it('should parse lines with multiple spaces correctly', () => {
+        const result = parser.parseTabular({ code: 0, stdout: KUBECTL_SAMPLE_MULTISPACE_RESULT, stderr: '' });
+        assert.equal(true, result.succeeded);
+        const objects = (<Succeeded<Dictionary<string>[]>>result).result;
+        assert.equal(objects.length, 2);
+        assert.equal(objects[0].namespace, 'ns1');
+        assert.equal(objects[0].name, 'foo');
+        assert.equal(objects[0].foo, 'true');
+        assert.equal(objects[0].bar, 'false');
+        assert.equal(objects[0]['release status'], 'green');
+        assert.equal(objects[0]['motto'], 'let the games    begin');
+        assert.equal(objects[1].namespace, 'ns2');
+        assert.equal(objects[1].name, 'barbar');
+        assert.equal(objects[1].foo, 'false');
+        assert.equal(objects[1].bar, 'twice');
+        assert.equal(objects[1]['release status'], 'dark  orange');
+        assert.equal(objects[1]['motto'], 'none');
+    });
+    it('should parse tables with empty cells', () => {
+        const result = parser.parseTabular({ code: 0, stdout: KUBECTL_SAMPLE_SKIPPED_COLUMN_RESULT, stderr: '' });
+        assert.equal(true, result.succeeded);
+        const objects = (<Succeeded<Dictionary<string>[]>>result).result;
+        assert.equal(objects.length, 2);
+        assert.equal(objects[0].namespace, 'ns1');
+        assert.equal(objects[0].name, 'foo');
+        assert.equal(objects[0]['release status'], 'green');
+        assert.equal(objects[0].motto, 'hello');
+        assert.equal(objects[1].namespace, 'ns2');
+        assert.equal(objects[1].name, 'barbar');
+        assert.equal(objects[1]['release status'], 'dark orange');
+        assert.equal(objects[1].motto, '');
     });
 });
