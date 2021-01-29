@@ -2,7 +2,7 @@ import { Dictionary } from "./dictionary";
 import { KubectlOutput } from ".";
 import { Errorable, failed } from "./errorable";
 
-const KUBECTL_OUTPUT_COLUMN_SEPARATOR = /\s+/g;
+const KUBECTL_OUTPUT_COLUMN_SEPARATOR = /\s\s+/g;
 
 /**
  * Provides a line-oriented view of tabular kubectl output.
@@ -58,19 +58,51 @@ export function asTableLines(output: KubectlOutput): Errorable<TableLines> {
     return { succeeded: false, reason: 'kubectl-error', error: output.stderr };
 }
 
+interface TableColumn {
+    readonly name: string;
+    readonly startIndex: number;
+    readonly endIndex?: number;
+}
+
 function parseTableLines(table: TableLines, columnSeparator: RegExp): Dictionary<string>[] {
     if (table.header.length === 0 || table.body.length === 0) {
         return [];
     }
-    const columnHeaders = table.header.toLowerCase().replace(columnSeparator, '|').split('|');
-    return table.body.map((line) => parseLine(line, columnHeaders, columnSeparator));
+    const columns = parseColumns(table.header, columnSeparator);
+    return table.body.map((line) => parseLine(line, columns));
 }
 
-function parseLine(line: string, columnHeaders: string[], columnSeparator: RegExp) {
+function parseLine(line: string, columns: TableColumn[]) {
     const lineInfoObject = Dictionary.of<string>();
-    const bits = line.replace(columnSeparator, '|').split('|');
-    bits.forEach((columnValue, index) => {
-        lineInfoObject[columnHeaders[index].trim()] = columnValue.trim();
+    columns.forEach((column) => {
+        const text = line.substring(column.startIndex, column.endIndex).trim();
+        lineInfoObject[column.name] = text;
     });
     return lineInfoObject;
+}
+
+function parseColumns(columnHeaders: string, columnSeparator: RegExp): TableColumn[] {
+    const columnStarts = parseColumnStarts(columnHeaders, columnSeparator);
+    const columns = Array.of<TableColumn>();
+    columnStarts.forEach((column, index) => {
+        const endIndex = (index < columnStarts.length - 1) ?
+            columnStarts[index + 1].startIndex - 1 :
+            undefined;
+        columns.push({ endIndex, ...column });
+    });
+    return columns;
+}
+
+function parseColumnStarts(columnHeaders: string, columnSeparator: RegExp) {
+    const columns = Array.of<TableColumn>();
+    const columnNames = columnHeaders.replace(columnSeparator, '|').split('|');
+    let takenTo = 0;
+    for (const columnName of columnNames) {
+        const startIndex = columnHeaders.indexOf(columnName, takenTo);
+        if (startIndex >= 0) {
+            takenTo = startIndex + columnName.length;
+            columns.push({ name: columnName.toLowerCase(), startIndex });
+        }
+    }
+    return columns;
 }
